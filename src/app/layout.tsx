@@ -15,6 +15,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "PersonifAI - AI-Powered Personalized Learning for Students",
   description: "Transform your educational journey with AI that adapts to your learning style. Perfect for school students and college learners seeking academic excellence.",
+  icons: {
+    icon: "/personifai-icon.svg",
+  },
 };
 
 export default function RootLayout({
