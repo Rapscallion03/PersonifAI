@@ -6,9 +6,10 @@ import { useRouter } from "next/navigation";
 interface LoginModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onLoginSuccess?: () => void;
 }
 
-export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
+export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginModalProps) {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -26,7 +27,11 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
 
   const handleTestLogin = () => {
     onClose();
-    router.push("/dashboard");
+    if (onLoginSuccess) {
+      onLoginSuccess();
+    } else {
+      router.push("/dashboard");
+    }
   };
 
   return (
