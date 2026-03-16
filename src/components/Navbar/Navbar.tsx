@@ -37,7 +37,7 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700">
+      <nav className="sticky top-0 left-0 right-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-2">
@@ -153,18 +153,6 @@ export default function Navbar() {
                         Dashboard
                       </Link>
 
-                      {/* AI Assistant Link */}
-                      <Link
-                        href="/ai-assistant"
-                        className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                        onClick={() => setIsUserMenuOpen(false)}
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                        </svg>
-                        AI Assistant
-                      </Link>
-
                       {/* Divider */}
                       <div className="my-1 border-t border-gray-200 dark:border-gray-700"></div>
 
@@ -190,12 +178,6 @@ export default function Navbar() {
                   >
                     Sign In
                   </button>
-                  {/* <Link
-                    href="/dashboard"
-                    className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-5 py-2 rounded-full font-medium hover:shadow-lg hover:shadow-indigo-500/30 transition-all"
-                  >
-                    Go to Dashboard
-                  </Link> */}
                 </>
               )
               }
