@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -12,6 +13,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const router = useRouter();
 
   if (!isOpen) return null;
 
@@ -20,6 +22,11 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
     // Handle login/signup logic here
     console.log({ email, password, name, isLogin });
     onClose();
+  };
+
+  const handleTestLogin = () => {
+    onClose();
+    router.push("/dashboard");
   };
 
   return (
@@ -163,6 +170,14 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
             {isLogin ? "Sign Up" : "Sign In"}
           </button>
         </p>
+
+        {/* Test Login Button */}
+        <button
+          onClick={handleTestLogin}
+          className="w-full mt-4 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 py-3 rounded-xl font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+        >
+          Test Login
+        </button>
       </div>
     </div>
   );
