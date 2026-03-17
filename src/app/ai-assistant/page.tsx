@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 
 export default function AIAssistant() {
   const [userInput, setUserInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const [messages, setMessages] = useState<{ role: string; content: string }[]>([
     {
       role: "assistant",
@@ -12,27 +13,52 @@ export default function AIAssistant() {
     }
   ]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!userInput.trim()) return;
+    if (!userInput.trim() || isLoading) return;
 
-    // Add user message
-    setMessages(prev => [...prev, { role: "user", content: userInput }]);
-
-    // Simulate AI response
-    setTimeout(() => {
-      const responses = [
-        "I'd be happy to help you with that! Let me break it down into manageable steps.",
-        "That's a great question! Let me explain this in a way that's easy to understand.",
-        "I can definitely help you with your studies. Would you like me to create a study plan?",
-        "Great! Let me provide you with some resources and practice problems.",
-        "I understand. Let me break this down into simpler concepts for you."
-      ];
-      const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-      setMessages(prev => [...prev, { role: "assistant", content: randomResponse }]);
-    }, 1000);
-
+    const currentInput = userInput;
     setUserInput("");
+    setIsLoading(true);
+
+    // Add user message to UI immediately
+    const newUserMessage = { role: "user", content: currentInput };
+    setMessages(prev => [...prev, newUserMessage]);
+
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: currentInput,
+          history: messages, // Previous history
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.error) {
+        console.log(data)
+        throw new Error(data.error);
+      }
+
+      setMessages(prev => [...prev, { role: "assistant", content: data.content }]);
+    } catch (error) {
+      console.error("Chat Error:", error);
+      setMessages(prev => [...prev, { role: "assistant", content: "Sorry, I encountered an error. Please try again later." }]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -119,10 +145,22 @@ export default function AIAssistant() {
                       <span className="text-xs font-medium text-indigo-600 dark:text-indigo-400">AI Assistant</span>
                     </div>
                   )}
-                  <p className="text-sm">{message.content}</p>
+                  <p className="text-sm whitespace-pre-wrap">{message.content}</p>
                 </div>
               </div>
             ))}
+            {isLoading && (
+              <div className="flex justify-start">
+                <div className="bg-gray-100 dark:bg-gray-700 rounded-2xl px-4 py-3 text-gray-900 dark:text-white">
+                  <div className="flex items-center gap-1">
+                    <div className="w-2 h-2 bg-indigo-600 rounded-full animate-bounce"></div>
+                    <div className="w-2 h-2 bg-indigo-600 rounded-full animate-bounce delay-75"></div>
+                    <div className="w-2 h-2 bg-indigo-600 rounded-full animate-bounce delay-150"></div>
+                  </div>
+                </div>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
           </div>
 
           {/* Input */}
@@ -134,15 +172,17 @@ export default function AIAssistant() {
                 onChange={(e) => setUserInput(e.target.value)}
                 placeholder="Tell me about your homework or college work..."
                 className="flex-1 px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
+                disabled={isLoading}
               />
               <button
                 type="submit"
-                className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-xl font-medium hover:shadow-lg hover:shadow-indigo-500/30 transition-all flex items-center gap-2"
+                disabled={isLoading}
+                className={`${isLoading ? 'opacity-50 cursor-not-allowed' : ''} bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-xl font-medium hover:shadow-lg hover:shadow-indigo-500/30 transition-all flex items-center gap-2`}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                 </svg>
-                Send
+                {isLoading ? 'Wait...' : 'Send'}
               </button>
             </div>
           </form>
