@@ -62,6 +62,9 @@ export default function Navbar() {
                 <a href="#testimonials" className="text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
                   Testimonials
                 </a>
+                <Link href="/tasks" className="text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                  Task Bucket
+                </Link>
               </div>
             )}
 
