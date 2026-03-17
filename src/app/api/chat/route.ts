@@ -3,8 +3,11 @@ import { generateText } from "ai";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
+  let message = "";
   try {
-    const { message, history } = await req.json();
+    const body = await req.json();
+    message = body.message;
+    const history = body.history;
 
     // The test-ai.mjs uses GOOGLE_GENERATIVE_AI_API_KEY
     const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
