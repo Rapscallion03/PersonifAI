@@ -3,6 +3,9 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+
 export default function AIAssistant() {
   const [userInput, setUserInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -145,7 +148,35 @@ export default function AIAssistant() {
                       <span className="text-xs font-medium text-indigo-600 dark:text-indigo-400">AI Assistant</span>
                     </div>
                   )}
-                  <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                  {message.role === "assistant" ? (
+                    <div className="markdown-content text-sm overflow-hidden">
+                      <ReactMarkdown 
+                        remarkPlugins={[remarkGfm]}
+                        components={{
+                          p: ({node, ...props}) => <p className="mb-2 last:mb-0" {...props} />,
+                          ul: ({node, ...props}) => <ul className="list-disc ml-4 mb-2" {...props} />,
+                          ol: ({node, ...props}) => <ol className="list-decimal ml-4 mb-2" {...props} />,
+                          li: ({node, ...props}) => <li className="mb-1" {...props} />,
+                          h1: ({node, ...props}) => <h1 className="text-lg font-bold mb-2" {...props} />,
+                          h2: ({node, ...props}) => <h2 className="text-base font-bold mb-2" {...props} />,
+                          h3: ({node, ...props}) => <h3 className="text-sm font-bold mb-1" {...props} />,
+                          code: ({node, inline, ...props}: any) => (
+                            inline 
+                              ? <code className="bg-gray-200 dark:bg-gray-600 px-1 rounded text-xs" {...props} />
+                              : <code className="block bg-gray-900 text-gray-100 p-2 rounded my-2 overflow-x-auto text-xs" {...props} />
+                          ),
+                          blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-indigo-500 pl-3 italic my-2" {...props} />,
+                          table: ({node, ...props}) => <div className="overflow-x-auto my-2"><table className="border-collapse border border-gray-300 dark:border-gray-600 w-full text-xs" {...props} /></div>,
+                          th: ({node, ...props}) => <th className="border border-gray-300 dark:border-gray-600 px-2 py-1 bg-gray-100 dark:bg-gray-800" {...props} />,
+                          td: ({node, ...props}) => <td className="border border-gray-300 dark:border-gray-600 px-2 py-1" {...props} />,
+                        }}
+                      >
+                        {message.content}
+                      </ReactMarkdown>
+                    </div>
+                  ) : (
+                    <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                  )}
                 </div>
               </div>
             ))}
