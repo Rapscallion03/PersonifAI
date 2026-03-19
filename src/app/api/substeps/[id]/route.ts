@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 // PATCH to update completion status of a substep
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { isCompleted } = await req.json();
