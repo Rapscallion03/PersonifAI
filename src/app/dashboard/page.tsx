@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 
 interface Task {
-  id: number;
+  id: string;
   title: string;
   subject: string;
   dueDate: string;
@@ -12,53 +12,51 @@ interface Task {
   priority: "high" | "medium" | "low";
 }
 
-// Sample tasks - in a real app, this would come from a database
-const sampleTasks: Task[] = [
-  {
-    id: 1,
-    title: "Complete Algebra Chapter 5",
-    subject: "Mathematics",
-    dueDate: "2026-03-16",
-    status: "pending",
-    priority: "high"
-  },
-  {
-    id: 2,
-    title: "Read History Essay - Industrial Revolution",
-    subject: "History",
-    dueDate: "2026-03-17",
-    status: "in-progress",
-    priority: "medium"
-  },
-  {
-    id: 3,
-    title: "Physics Lab Report - Pendulum Experiment",
-    subject: "Physics",
-    dueDate: "2026-03-18",
-    status: "pending",
-    priority: "high"
-  },
-  {
-    id: 4,
-    title: "Practice Spanish Vocabulary",
-    subject: "Spanish",
-    dueDate: "2026-03-19",
-    status: "pending",
-    priority: "low"
-  },
-  {
-    id: 5,
-    title: "Essay Draft - Climate Change",
-    subject: "English",
-    dueDate: "2026-03-20",
-    status: "pending",
-    priority: "medium"
-  }
-];
-
 export default function Dashboard() {
-  const [tasks, setTasks] = useState<Task[]>(sampleTasks);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [filter, setFilter] = useState<string>("all");
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchTasks = async () => {
+      try {
+        const res = await fetch("/api/tasks");
+        
+        if (!res.ok) {
+          const errorText = await res.text();
+          throw new Error(`API error (${res.status}): ${errorText.substring(0, 100)}...`);
+        }
+        
+        const dbTasks = await res.json();
+        
+        const formattedTasks = dbTasks.map((t: any) => {
+          const totalSteps = t.subSteps?.length || 0;
+          const completedSteps = t.subSteps?.filter((s: any) => s.isCompleted).length || 0;
+          
+          let status: "pending" | "completed" | "in-progress" = "pending";
+          if (totalSteps > 0 && completedSteps === totalSteps) status = "completed";
+          else if (completedSteps > 0) status = "in-progress";
+
+          return {
+            id: t.id,
+            title: t.title,
+            subject: t.juice?.subject || "General",
+            dueDate: new Date(t.createdAt).toLocaleDateString(),
+            status,
+            priority: t.juice?.priority || "medium"
+          };
+        });
+        
+        setTasks(formattedTasks);
+      } catch (error) {
+        console.error("Failed to fetch tasks from DB:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchTasks();
+  }, []);
 
   const filteredTasks = filter === "all" 
     ? tasks 

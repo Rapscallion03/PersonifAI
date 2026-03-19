@@ -1,0 +1,41 @@
+// This is your Prisma schema file
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Task {
+  id          String    @id @default(cuid())
+  title       String    // The "Fat Task" (e.g., "Build a garden")
+  
+  // The "Juice" - Stored as a JSON object
+  // Contains: { skillLevel, materials, timeBudget, etc. }
+  juice       Json     
+  
+  subSteps    SubStep[] // The broken down doable tasks
+  createdAt   DateTime  @default(now())
+}
+
+model SubStep {
+  id          String   @id @default(cuid())
+  taskId      String
+  task        Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  
+  type        StepType @default(TEXT)
+  title       String
+  content     String   // The instruction or the YouTube URL
+  isCompleted Boolean  @default(false)
+}
+
+enum StepType {
+  TEXT
+  VIDEO
+  PHYSICAL
+  REVISION
+}
