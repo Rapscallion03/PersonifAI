@@ -17,6 +17,7 @@ export default function AIAssistant() {
   ]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -26,13 +27,27 @@ export default function AIAssistant() {
     scrollToBottom();
   }, [messages]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Adjust textarea height dynamically
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 200)}px`;
+    }
+  }, [userInput]);
+
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!userInput.trim() || isLoading) return;
 
     const currentInput = userInput;
     setUserInput("");
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+    }
     setIsLoading(true);
+    
+    // ... rest of the logic
+
 
     // Add user message to UI immediately
     const newUserMessage = { role: "user", content: currentInput };
@@ -127,7 +142,7 @@ export default function AIAssistant() {
         {/* Chat Container */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden">
           {/* Messages */}
-          <div className="h-96 overflow-y-auto p-6 space-y-4">
+          <div className="h-96 overflow-y-auto p-6 space-y-4 chat-scrollbar">
             {messages.map((message, index) => (
               <div
                 key={index}
@@ -196,19 +211,26 @@ export default function AIAssistant() {
 
           {/* Input */}
           <form onSubmit={handleSubmit} className="p-4 border-t border-gray-200 dark:border-gray-700">
-            <div className="flex gap-3">
-              <input
-                type="text"
+            <div className="flex items-end gap-3">
+              <textarea
+                ref={textareaRef}
                 value={userInput}
                 onChange={(e) => setUserInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSubmit();
+                  }
+                }}
                 placeholder="Tell me about your homework or college work..."
-                className="flex-1 px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
+                rows={1}
+                className="flex-1 px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all resize-none overflow-y-auto chat-scrollbar"
                 disabled={isLoading}
               />
               <button
                 type="submit"
                 disabled={isLoading}
-                className={`${isLoading ? 'opacity-50 cursor-not-allowed' : ''} bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-xl font-medium hover:shadow-lg hover:shadow-indigo-500/30 transition-all flex items-center gap-2`}
+                className={`${isLoading ? 'opacity-50 cursor-not-allowed' : ''} bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-xl font-medium hover:shadow-lg hover:shadow-indigo-500/30 transition-all flex items-center gap-2 h-[46px] flex-shrink-0`}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
