@@ -2,12 +2,14 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { SimpleTask, LectureTask, RevisionTask } from "@/components";
 
 interface SubStep {
   id: string;
   title: string;
   isCompleted: boolean;
-  type: string;
+  type: "TEXT" | "VIDEO" | "REVISION" | "PHYSICAL";
+  content: string;
 }
 
 interface Task {
@@ -67,7 +69,7 @@ export default function Dashboard() {
     fetchTasks();
   }, []);
 
-  const handleToggleSubStep = async (taskId: string, subStepId: string, currentStatus: boolean) => {
+  const handleToggleSubStep = async (subStepId: string, currentStatus: boolean) => {
     try {
       const res = await fetch(`/api/substeps/${subStepId}`, {
         method: "PATCH",
@@ -246,24 +248,41 @@ export default function Dashboard() {
 
                   {/* Sub-steps */}
                   {task.subSteps && task.subSteps.length > 0 && (
-                    <div className="ml-10 space-y-3 bg-gray-50/50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-100 dark:border-gray-700">
-                      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Sub-tasks</p>
-                      {task.subSteps.map((step) => (
-                        <div key={step.id} className="flex items-center gap-3">
-                          <input
-                            type="checkbox"
-                            checked={step.isCompleted}
-                            onChange={() => handleToggleSubStep(task.id, step.id, step.isCompleted)}
-                            className="w-5 h-5 rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                    <div className="ml-10 space-y-4">
+                      {task.subSteps.map((step) => {
+                        if (step.type === "VIDEO") {
+                          return (
+                            <LectureTask 
+                              key={step.id}
+                              title={step.title}
+                              description="Video lecture"
+                              videoUrl={step.content}
+                              isCompleted={step.isCompleted}
+                              onToggle={() => handleToggleSubStep(step.id, step.isCompleted)}
+                            />
+                          );
+                        }
+                        if (step.type === "REVISION") {
+                          return (
+                            <RevisionTask 
+                              key={step.id}
+                              title={step.title}
+                              description={step.content}
+                              isCompleted={step.isCompleted}
+                              onToggle={() => handleToggleSubStep(step.id, step.isCompleted)}
+                            />
+                          );
+                        }
+                        return (
+                          <SimpleTask 
+                            key={step.id}
+                            title={step.title}
+                            description={step.content}
+                            isCompleted={step.isCompleted}
+                            onToggle={() => handleToggleSubStep(step.id, step.isCompleted)}
                           />
-                          <div className="flex flex-col">
-                            <span className={`text-sm ${step.isCompleted ? "text-gray-400 line-through" : "text-gray-700 dark:text-gray-200"}`}>
-                              {step.title}
-                            </span>
-                            <span className="text-[10px] text-gray-400 font-medium uppercase">{step.type}</span>
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </div>
