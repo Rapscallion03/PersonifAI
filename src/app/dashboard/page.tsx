@@ -3,6 +3,13 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 
+interface SubStep {
+  id: string;
+  title: string;
+  isCompleted: boolean;
+  type: string;
+}
+
 interface Task {
   id: string;
   title: string;
@@ -10,6 +17,7 @@ interface Task {
   dueDate: string;
   status: "pending" | "completed" | "in-progress";
   priority: "high" | "medium" | "low";
+  subSteps: SubStep[];
 }
 
 export default function Dashboard() {
@@ -17,46 +25,64 @@ export default function Dashboard() {
   const [filter, setFilter] = useState<string>("all");
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchTasks = async () => {
-      try {
-        const res = await fetch("/api/tasks");
-        
-        if (!res.ok) {
-          const errorText = await res.text();
-          throw new Error(`API error (${res.status}): ${errorText.substring(0, 100)}...`);
-        }
-        
-        const dbTasks = await res.json();
-        
-        const formattedTasks = dbTasks.map((t: any) => {
-          const totalSteps = t.subSteps?.length || 0;
-          const completedSteps = t.subSteps?.filter((s: any) => s.isCompleted).length || 0;
-          
-          let status: "pending" | "completed" | "in-progress" = "pending";
-          if (totalSteps > 0 && completedSteps === totalSteps) status = "completed";
-          else if (completedSteps > 0) status = "in-progress";
-
-          return {
-            id: t.id,
-            title: t.title,
-            subject: t.juice?.subject || "General",
-            dueDate: new Date(t.createdAt).toLocaleDateString(),
-            status,
-            priority: t.juice?.priority || "medium"
-          };
-        });
-        
-        setTasks(formattedTasks);
-      } catch (error) {
-        console.error("Failed to fetch tasks from DB:", error);
-      } finally {
-        setIsLoading(false);
+  const fetchTasks = async () => {
+    try {
+      const res = await fetch("/api/tasks");
+      
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`API error (${res.status}): ${errorText.substring(0, 100)}...`);
       }
-    };
+      
+      const dbTasks = await res.json();
+      
+      const formattedTasks = dbTasks.map((t: any) => {
+        const totalSteps = t.subSteps?.length || 0;
+        const completedSteps = t.subSteps?.filter((s: any) => s.isCompleted).length || 0;
+        
+        let status: "pending" | "completed" | "in-progress" = "pending";
+        if (totalSteps > 0 && completedSteps === totalSteps) status = "completed";
+        else if (completedSteps > 0) status = "in-progress";
 
+        return {
+          id: t.id,
+          title: t.title,
+          subject: t.juice?.subject || "General",
+          dueDate: new Date(t.createdAt).toLocaleDateString(),
+          status,
+          priority: t.juice?.priority || "medium",
+          subSteps: t.subSteps || []
+        };
+      });
+      
+      setTasks(formattedTasks);
+    } catch (error) {
+      console.error("Failed to fetch tasks from DB:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchTasks();
   }, []);
+
+  const handleToggleSubStep = async (taskId: string, subStepId: string, currentStatus: boolean) => {
+    try {
+      const res = await fetch(`/api/substeps/${subStepId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isCompleted: !currentStatus }),
+      });
+
+      if (res.ok) {
+        // Refresh tasks to update overall status
+        await fetchTasks();
+      }
+    } catch (error) {
+      console.error("Failed to toggle substep:", error);
+    }
+  };
 
   const filteredTasks = filter === "all" 
     ? tasks 
@@ -181,40 +207,65 @@ export default function Dashboard() {
           <div className="divide-y divide-gray-200 dark:divide-gray-700">
             {filteredTasks.length > 0 ? (
               filteredTasks.map((task) => (
-                <div key={task.id} className="p-6 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                  <div className="flex items-center gap-4">
-                    <button className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                      task.status === "completed" 
-                        ? "bg-green-500 border-green-500" 
-                        : "border-gray-300 dark:border-gray-600"
-                    }`}>
-                      {task.status === "completed" && (
-                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                        </svg>
-                      )}
-                    </button>
-                    <div>
-                      <h3 className={`font-medium text-gray-900 dark:text-white ${
-                        task.status === "completed" ? "line-through text-gray-400" : ""
+                <div key={task.id} className="p-6 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-4">
+                      <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                        task.status === "completed" 
+                          ? "bg-green-500 border-green-500" 
+                          : "border-gray-300 dark:border-gray-600"
                       }`}>
-                        {task.title}
-                      </h3>
-                      <div className="flex items-center gap-3 mt-1">
-                        <span className="text-sm text-gray-500 dark:text-gray-400">{task.subject}</span>
-                        <span className="text-sm text-gray-400">•</span>
-                        <span className="text-sm text-gray-500 dark:text-gray-400">Due: {task.dueDate}</span>
+                        {task.status === "completed" && (
+                          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </div>
+                      <div>
+                        <h3 className={`font-bold text-lg text-gray-900 dark:text-white ${
+                          task.status === "completed" ? "line-through text-gray-400" : ""
+                        }`}>
+                          {task.title}
+                        </h3>
+                        <div className="flex items-center gap-3 mt-1">
+                          <span className="text-sm text-gray-500 dark:text-gray-400">{task.subject}</span>
+                          <span className="text-sm text-gray-400">•</span>
+                          <span className="text-sm text-gray-500 dark:text-gray-400">Due: {task.dueDate}</span>
+                        </div>
                       </div>
                     </div>
+                    <div className="flex items-center gap-4">
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(task.status)}`}>
+                        {task.status.replace("-", " ")}
+                      </span>
+                      <span className={`text-lg ${getPriorityColor(task.priority)}`} title={`${task.priority} priority`}>
+                        ●
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(task.status)}`}>
-                      {task.status.replace("-", " ")}
-                    </span>
-                    <span className={`text-lg ${getPriorityColor(task.priority)}`} title={`${task.priority} priority`}>
-                      ●
-                    </span>
-                  </div>
+
+                  {/* Sub-steps */}
+                  {task.subSteps && task.subSteps.length > 0 && (
+                    <div className="ml-10 space-y-3 bg-gray-50/50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-100 dark:border-gray-700">
+                      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Sub-tasks</p>
+                      {task.subSteps.map((step) => (
+                        <div key={step.id} className="flex items-center gap-3">
+                          <input
+                            type="checkbox"
+                            checked={step.isCompleted}
+                            onChange={() => handleToggleSubStep(task.id, step.id, step.isCompleted)}
+                            className="w-5 h-5 rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                          />
+                          <div className="flex flex-col">
+                            <span className={`text-sm ${step.isCompleted ? "text-gray-400 line-through" : "text-gray-700 dark:text-gray-200"}`}>
+                              {step.title}
+                            </span>
+                            <span className="text-[10px] text-gray-400 font-medium uppercase">{step.type}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))
             ) : (
