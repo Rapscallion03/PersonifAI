@@ -20,13 +20,31 @@ export async function POST(req: Request) {
     }
 
     // Prepare full prompt with history context
-    // Vercel AI SDK generateText can also take 'messages' array, 
-    // but to keep it simple and match the test-ai.mjs style:
     const context = history
       .map((msg: any) => `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}`)
       .join('\n');
     
-    const fullPrompt = `${context}\nUser: ${message}\nAssistant:`;
+    const systemPrompt = `You are PersonifAI, a personalized academic assistant for students.
+Your goal is to help students break down complex tasks into manageable sub-steps.
+
+FLOW:
+1. If the user's task is vague, ask 1-2 clarifying questions (e.g., word count, rubric, level of detail).
+2. Once the task is clear, provide a "Breakdown Preview". 
+
+When providing a breakdown, you MUST include a JSON block at the end of your response following this structure:
+{
+  "type": "BREAKDOWN_PREVIEW",
+  "title": "Main Task Title",
+  "subject": "e.g., Biology, History, Computer Science",
+  "priority": "high | medium | low",
+  "subSteps": [
+    { "type": "TEXT" | "VIDEO" | "REVISION", "title": "Substep Title", "content": "Instructional content or URL" }
+  ]
+}
+
+Keep your conversational text brief and encouraging.`;
+
+    const fullPrompt = `${systemPrompt}\n\n${context}\nUser: ${message}\nAssistant:`;
 
     const { text } = await generateText({
       model: google('gemini-2.5-flash'),

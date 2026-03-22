@@ -2,14 +2,17 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { SimpleTask, LectureTask, RevisionTask } from "@/components";
 
 export default function AIAssistant() {
+  const router = useRouter();
   const [userInput, setUserInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [messages, setMessages] = useState<{ role: string; content: string }[]>([
+  const [messages, setMessages] = useState<{ role: string; content: string; breakdown?: any }[]>([
     {
       role: "assistant",
       content: "Hi there! I'm your AI learning assistant. What would you like help with today? Is it your homework or college work?"
@@ -35,6 +38,29 @@ export default function AIAssistant() {
     }
   }, [userInput]);
 
+  const handleApproveBreakdown = async (breakdown: any) => {
+    try {
+      setIsLoading(true);
+      const res = await fetch("/api/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: breakdown.title,
+          juice: { subject: breakdown.subject, priority: breakdown.priority },
+          subSteps: breakdown.subSteps
+        }),
+      });
+
+      if (res.ok) {
+        router.push("/dashboard");
+      }
+    } catch (error) {
+      console.error("Failed to post breakdown:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!userInput.trim() || isLoading) return;
@@ -45,9 +71,6 @@ export default function AIAssistant() {
       textareaRef.current.style.height = "auto";
     }
     setIsLoading(true);
-    
-    // ... rest of the logic
-
 
     // Add user message to UI immediately
     const newUserMessage = { role: "user", content: currentInput };
@@ -59,18 +82,36 @@ export default function AIAssistant() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: currentInput,
-          history: messages, // Previous history
+          history: messages.map(m => ({ role: m.role, content: m.content })), 
         }),
       });
 
       const data = await response.json();
 
       if (data.error) {
-        console.log(data)
         throw new Error(data.error);
       }
 
-      setMessages(prev => [...prev, { role: "assistant", content: data.content }]);
+      // Try to parse breakdown JSON if it exists
+      let assistantContent = data.content;
+      let breakdown = null;
+
+      try {
+        const jsonMatch = assistantContent.match(/\{[\s\S]*"type":\s*"BREAKDOWN_PREVIEW"[\s\S]*\}/);
+        if (jsonMatch) {
+          breakdown = JSON.parse(jsonMatch[0]);
+          // Clean the content of the JSON block for cleaner display
+          assistantContent = assistantContent.replace(jsonMatch[0], "").trim();
+        }
+      } catch (e) {
+        console.error("Failed to parse breakdown JSON:", e);
+      }
+
+      setMessages(prev => [...prev, { 
+        role: "assistant", 
+        content: assistantContent || "Here is your breakdown preview:", 
+        breakdown 
+      }]);
     } catch (error) {
       console.error("Chat Error:", error);
       setMessages(prev => [...prev, { role: "assistant", content: "Sorry, I encountered an error. Please try again later." }]);
@@ -188,6 +229,49 @@ export default function AIAssistant() {
                       >
                         {message.content}
                       </ReactMarkdown>
+
+                      {message.breakdown && (
+                        <div className="mt-6 border-t border-gray-200 dark:border-gray-600 pt-6">
+                          <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl p-6 border border-indigo-100 dark:border-indigo-900/30">
+                            <div className="flex justify-between items-start mb-4">
+                              <div>
+                                <h4 className="text-lg font-bold text-gray-900 dark:text-white">{message.breakdown.title}</h4>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <span className="text-xs font-medium px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 rounded-full">
+                                    {message.breakdown.subject}
+                                  </span>
+                                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                                    message.breakdown.priority === 'high' ? 'bg-red-100 text-red-600' :
+                                    message.breakdown.priority === 'medium' ? 'bg-yellow-100 text-yellow-600' :
+                                    'bg-green-100 text-green-600'
+                                  }`}>
+                                    {message.breakdown.priority}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div className="space-y-3 mb-6">
+                              {message.breakdown.subSteps.map((step: any, sIdx: number) => {
+                                if (step.type === "VIDEO") return <LectureTask key={sIdx} title={step.title} description="Video lecture" videoUrl={step.content} isCompleted={false} />;
+                                if (step.type === "REVISION") return <RevisionTask key={sIdx} title={step.title} description={step.content} isCompleted={false} />;
+                                return <SimpleTask key={sIdx} title={step.title} description={step.content} isCompleted={false} />;
+                              })}
+                            </div>
+
+                            <button
+                              onClick={() => handleApproveBreakdown(message.breakdown)}
+                              disabled={isLoading}
+                              className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white py-3 rounded-xl font-bold hover:shadow-lg hover:shadow-green-500/30 transition-all flex items-center justify-center gap-2"
+                            >
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                              {isLoading ? "Adding to Dashboard..." : "Approve & Add to Dashboard"}
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <p className="text-sm whitespace-pre-wrap">{message.content}</p>
