@@ -1,4 +1,5 @@
-import { PrismaClient } from '@generated/prisma/client'
+// PRISMA 7 FIXED VERSION (RELATIVE PATH)
+import { PrismaClient } from '../generated/prisma/client'
 import { PrismaPg } from '@prisma/adapter-pg'
 import pg from 'pg'
 
