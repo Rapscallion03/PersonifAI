@@ -107,9 +107,42 @@ graph TD
 
 ---
 
-## 3. Tier Breakdown
+## 3. Entity-Relationship Diagram (ERD)
 
-### 3.1 Presentation Tier (Frontend)
+The following diagram illustrates the relationship between the core entities, including the planned **User** entity for future implementation.
+
+```mermaid
+erDiagram
+    USER ||--o{ TASK : owns
+    TASK ||--o{ SUBSTEP : contains
+    USER {
+        string id PK
+        string email
+        string name
+        datetime createdAt
+    }
+    TASK {
+        string id PK
+        string userId FK
+        string title
+        json juice
+        datetime createdAt
+    }
+    SUBSTEP {
+        string id PK
+        string taskId FK
+        string title
+        string content
+        boolean isCompleted
+        StepType type
+    }
+```
+
+---
+
+## 4. Tier Breakdown
+
+### 4.1 Presentation Tier (Frontend)
 The user interface is built using **Next.js (App Router)** and **TypeScript**, ensuring a type-safe and performant experience.
 - **UI Framework:** React with functional components.
 - **Styling:** Tailwind CSS 4 for a modern, responsive design with dark mode support.
@@ -118,7 +151,7 @@ The user interface is built using **Next.js (App Router)** and **TypeScript**, e
     - **AI Assistant:** Interactive chat interface for task decomposition.
     - **Dashboard:** Management hub for tracking learning progress.
 
-### 3.2 Logic Tier (Application)
+### 4.2 Logic Tier (Application)
 The logic tier handles request routing, business logic, and external API orchestrations.
 - **API Framework:** Next.js Route Handlers (Server-side).
 - **AI Integration:** 
@@ -126,7 +159,7 @@ The logic tier handles request routing, business logic, and external API orchest
     - Specialized system prompting to convert natural language into structured JSON task previews.
 - **ORM:** **Prisma 7** manages the abstraction layer for database operations, ensuring schema consistency.
 
-### 3.3 Data Tier (Database)
+### 4.3 Data Tier (Database)
 Persistent storage for all user data and generated tasks.
 - **Database:** **PostgreSQL**.
 - **Data Model:**
