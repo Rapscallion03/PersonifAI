@@ -116,25 +116,25 @@ erDiagram
     USER ||--o{ TASK : owns
     TASK ||--o{ SUBSTEP : contains
     USER {
-        string id PK
-        string email
-        string name
-        datetime createdAt
+        string id PK "Primary Key - System ID"
+        string email "User Email"
+        string name "Full Name"
+        datetime createdAt "Join Date"
     }
     TASK {
-        string id PK
-        string userId FK
-        string title
-        json juice
-        datetime createdAt
+        string id PK "Primary Key - System ID"
+        string userId FK "Foreign Key - Owner Reference"
+        string title "Learning Goal"
+        json juice "Meta: Subject/Priority"
+        datetime createdAt "Generation Date"
     }
     SUBSTEP {
-        string id PK
-        string taskId FK
-        string title
-        string content
-        boolean isCompleted
-        StepType type
+        string id PK "Primary Key - System ID"
+        string taskId FK "Foreign Key - Parent Reference"
+        string title "Action Title"
+        string content "Details or URL"
+        boolean isCompleted "Done Status"
+        StepType type "Step Category"
     }
 ```
 
