@@ -86,6 +86,39 @@ export default function Dashboard() {
     }
   };
 
+  const handleDeleteTask = async (taskId: string) => {
+    if (!confirm("Are you sure you want to delete this task?")) return;
+    
+    try {
+      const res = await fetch(`/api/tasks/${taskId}`, {
+        method: "DELETE",
+      });
+
+      if (res.ok) {
+        setTasks(prev => prev.filter(t => t.id !== taskId));
+      }
+    } catch (error) {
+      console.error("Failed to delete task:", error);
+    }
+  };
+
+  const handleDeleteSubStep = async (subStepId: string) => {
+    if (!confirm("Are you sure you want to delete this sub-task?")) return;
+    
+    try {
+      const res = await fetch(`/api/substeps/${subStepId}`, {
+        method: "DELETE",
+      });
+
+      if (res.ok) {
+        // Refresh tasks to update UI
+        await fetchTasks();
+      }
+    } catch (error) {
+      console.error("Failed to delete substep:", error);
+    }
+  };
+
   const filteredTasks = filter === "all" 
     ? tasks 
     : tasks.filter(task => task.status === filter);
@@ -243,6 +276,15 @@ export default function Dashboard() {
                       <span className={`text-lg ${getPriorityColor(task.priority)}`} title={`${task.priority} priority`}>
                         ●
                       </span>
+                      <button
+                        onClick={() => handleDeleteTask(task.id)}
+                        className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                        title="Delete task"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
                     </div>
                   </div>
 
@@ -259,6 +301,7 @@ export default function Dashboard() {
                               videoUrl={step.content}
                               isCompleted={step.isCompleted}
                               onToggle={() => handleToggleSubStep(step.id, step.isCompleted)}
+                              onDelete={() => handleDeleteSubStep(step.id)}
                             />
                           );
                         }
@@ -270,6 +313,7 @@ export default function Dashboard() {
                               description={step.content}
                               isCompleted={step.isCompleted}
                               onToggle={() => handleToggleSubStep(step.id, step.isCompleted)}
+                              onDelete={() => handleDeleteSubStep(step.id)}
                             />
                           );
                         }
@@ -280,6 +324,7 @@ export default function Dashboard() {
                             description={step.content}
                             isCompleted={step.isCompleted}
                             onToggle={() => handleToggleSubStep(step.id, step.isCompleted)}
+                            onDelete={() => handleDeleteSubStep(step.id)}
                           />
                         );
                       })}
